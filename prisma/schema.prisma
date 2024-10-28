@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Courses {
+  id                Int                 @id @default(autoincrement())
+  title             String
+  courseCode        String             @unique(map: "sqlite_autoindex_courses_1")
+  created_at        DateTime?           @default(now())
+  last_updated_on   DateTime?           @default(now())
+  departmentcourses Departmentcourses[]
+}
+
+model Departmentcourses {
+  id              Int          @id @default(autoincrement())
+  courseCode       String
+  semesterCode     String
+  staffId          Int
+  departmentCode  String
+
+  credit          Int
+  resultsAvailable  Int?             @default(0)
+  created_at      DateTime?    @default(now())
+  last_updated_on DateTime?    @default(now())
+  departments     Departments? @relation(fields: [departmentCode], references: [departmentCode], onDelete: Cascade, onUpdate: NoAction)
+  semesters       Semesters?   @relation(fields: [semesterCode], references: [semesterCode], onDelete: Cascade, onUpdate: NoAction)
+  courses         Courses?     @relation(fields: [courseCode], references: [courseCode], onDelete: Cascade, onUpdate: NoAction)
+  staffs         Staffs?          @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Departments {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  departmentCode    String              @unique(map: "sqlite_autoindex_departments_1")
+  facultyCode       String?
+  created_at        DateTime?           @default(now())
+  last_updated_on   DateTime?           @default(now())
+  departmentcourses Departmentcourses[]
+  faculties         Faculties?          @relation(fields: [facultyCode], references: [code], onDelete: Cascade, onUpdate: NoAction)
+  staffs            Staffs[]
+  students          Students[]
+}
+
+model Faculties {
+  id              Int           @id @default(autoincrement())
+  name            String
+  code            String        @unique(map: "sqlite_autoindex_faculties_1")
+  created_at      DateTime?     @default(now())
+  last_updated_on DateTime?     @default(now())
+  departments     Departments[]
+}
+
+model Results {
+  id               Int               @id @default(autoincrement())
+  courseRegId      Int?         @unique(map: "sqlite_autoindex_results_1")
+  ca               Int?
+  exam               Int?
+  gradePoint        Int?
+  isPushed          Int?             @default(0)
+  isPassed         Int?              @default(0)
+  isRetake         Int?              @default(0)
+  pending          Int?              @default(1)
+  created_at       DateTime?         @default(now())
+  last_updated_on  DateTime?         @default(now())
+  studentCourseReg StudentCourseReg? @relation(fields: [courseRegId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Gpas{
+    id               Int               @id @default(autoincrement())
+    matric_number    String
+    totalUnit        Int
+    totalGradePoint    Int
+    semesterId         Int
+    semesters          Semesters? @relation(fields: [semesterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+
+}
+
+model Semesters {
+  id                  Int                   @id @default(autoincrement())
+  semesterCode        String           @unique(map: "sqlite_autoindex_semester_1")
+  name                String
+  startDate           DateTime
+  endDate             DateTime
+  sessionCode         String
+  created_at          DateTime?             @default(now())
+  last_updated_on     DateTime?             @default(now())
+  session         Session?          @relation(fields: [sessionCode], references: [sessionCode], onDelete: Cascade, onUpdate: NoAction)
+  departmentcourses   Departmentcourses[]
+  studentCourseReg    StudentCourseReg[]
+  Gpas    Gpas[]
+
+
+}
+
+model Session {
+    id                  Int                   @id @default(autoincrement())
+    sessionCode         String                @unique(map: "sqlite_autoindex_session_1")
+    startDate   DateTime
+    endDate     DateTime
+    created_at          DateTime?             @default(now())
+    last_updated_on     DateTime?             @default(now())
+    semester    Semesters[]
+}
+
+
+
+model Staffs {
+  id                  Int                   @id @default(autoincrement())
+  title                 String
+  firstName               String
+  lastName              String
+  role                  String    @default("STAFF")
+  email               String                @unique(map: "sqlite_autoindex_staffs_1")
+  password          String 
+  hod_flag          Int?              @default(0)
+  departmentId      Int
+  created_at          DateTime?             @default(now())
+  last_updated_on     DateTime?             @default(now())
+  DepartmentCourses Departmentcourses[]
+  departments         Departments?          @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model StudentCourseReg {
+  id                 Int        @id @default(autoincrement())
+  matric_number      String?   
+  semesterId         Int?
+  departmentCourseId Int?
+  created_at         DateTime?  @default(now())
+  last_updated_on    DateTime?  @default(now())
+  results            Results?
+  students           Students?  @relation(fields: [matric_number], references: [matric_number], onDelete: Cascade, onUpdate: NoAction)
+  semesters          Semesters? @relation(fields: [semesterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Students {
+  id               Int               @id @default(autoincrement())
+  matric_number    String            @unique(map: "sqlite_autoindex_students_1")
+  firstName               String
+  lastName              String
+  email            String            @unique(map: "sqlite_autoindex_students_2")
+  password          String 
+
+  departmentId     Int
+  created_at       DateTime?         @default(now())
+  last_updated_on  DateTime?         @default(now())
+  studentCourseReg StudentCourseReg[]
+  departments      Departments?      @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+}
+
+model UserSession {
+  id         Int       @id @default(autoincrement())
+  userId     Int?
+  token      String    @unique(map: "sqlite_autoindex_userSession_1")
+  created_at DateTime? @default(now())
+}
+
+model Users {
+  id              Int       @id @default(autoincrement())
+  username        String
+  password        String
+  email           String    @unique(map: "sqlite_autoindex_users_1")
+  role            String    @default("STAFF")
+  emailVerified   DateTime?    
+  created_at      DateTime? @default(now())
+  last_updated_on DateTime? @default(now())
+}
+
+model VerificationToken {
+  id      Int       @id @default(autoincrement())
+  email   String      @unique(map: "sqlite_autoindex_verificationToken_1")
+  token   String?   @unique(map: "sqlite_autoindex_verificationToken_2")
+  expires DateTime?
+}
+
+model PasswordResetToken {
+  id      Int       @id @default(autoincrement())
+  email   String      @unique(map: "sqlite_autoindex_passwordResetToken_1")
+  token   String?   @unique(map: "sqlite_autoindex_passwordResetToken_2")
+  expires DateTime?
+}
